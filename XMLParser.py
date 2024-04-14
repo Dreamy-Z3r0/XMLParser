@@ -227,6 +227,7 @@ class XMLParser:
         # Global name check for file contents under root
         elementName = None
         closeTag = None
+        print(self.fileContent)
         for i, c in enumerate(self.fileContent):
             if elementName is None:
                 if '<' == c:
@@ -258,6 +259,12 @@ class XMLParser:
                 else:
                     closeTag += c
 
+        # for i, _ in enumerate(self.openTags):
+        #     try:
+        #         print(f'{self.openTags[i]:>9} |')
+        #     except:
+        #         print(f'{' '*9} | {self.closeTags[i]}')
+
         if len(self.closeTags) != len(self.openTags):
             raise Exception("Mismatched XML elements and closing tags.")
         else:
@@ -280,7 +287,7 @@ class XMLParser:
                     else:
                         self.fileContent += c
                 except:
-                    pass
+                    self.fileContent += c
                 finally:
                     tag = c == '<'
             else:
@@ -294,12 +301,21 @@ class XMLParser:
                     if not skip:
                         self.fileContent += c
 
-                
-        print(self.fileContent)
+        # while self.fileContent.find('/>') > -1:
+        #     tagIndices = [self.fileContent.rfind('<',0,self.fileContent.rfind('/>')), self.fileContent.rfind('/>')]
+        #     tag = self.fileContent[tagIndices[0]:tagIndices[1]+2]
+        #     replacement = self.fileContent[tagIndices[0]:tagIndices[1]] + '>'
+        #     self.fileContent = self.fileContent.replace(tag, replacement)
 
     
     def get_name_list(self):
         self.tagTree = {}
+
+        for i, _ in enumerate(self.openTags):
+            try:
+                print(f'{self.openTags[i]:>9} |')
+            except:
+                print(f'{' '*9} | {self.closeTags[i]}')
 
         for i, tag in enumerate(self.closeTags):
             if tag is not None:
@@ -312,6 +328,7 @@ class XMLParser:
                         if removalCondition:
                             self.openTags[index] = None
                     index -= 1
+
                 if temp not in self.tagTree:
                     self.tagTree.update({temp:None})
                 else:
@@ -319,8 +336,11 @@ class XMLParser:
                         self.tagTree[temp] = [None]
                     self.tagTree[temp].append(None)
 
+        for tag in self.tagTree:
+            print(f'{tag}: {self.tagTree[tag]}')
+
         tagTree_temp = {list(self.tagTree.keys())[-1]: self.tree_sort(parent=list(self.tagTree.keys())[-1])}
-        print(tagTree_temp)
+        
 
 
     def tree_sort(self, parent):
@@ -341,7 +361,7 @@ if __name__ == '__main__':
     file = 'test_file.xml'
     testSection = XMLParser(file=file)
 
-    tagTree = testSection.tagTree
-    print("Tag tree:")
-    for tag in tagTree:
-        print(f'{tag}: {tagTree[tag]}')
+    # tagTree = testSection.tagTree
+    # print("Tag tree:")
+    # for tag in tagTree:
+    #     print(f'{tag}: {tagTree[tag]}')
