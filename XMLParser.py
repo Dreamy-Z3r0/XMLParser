@@ -107,7 +107,7 @@ class XMLParser:
         
         # Match attributes
         for index, _ in enumerate(tag):
-            if index > 0:
+            if index > 0 and tag[index] != '/':
                 # Normalise attribute
                 temp = ''
                 count = 0
@@ -123,7 +123,7 @@ class XMLParser:
 
                 # Each attribute must be in the form of a='b'
                 if 1 != temp.count('=') or 2 != temp.count("'"):
-                    raise Exception(msg)                    
+                    raise Exception(f'{msg}; in check: {tag[index]}')                    
                 if temp.find("'") < temp.find('='):
                     raise Exception(msg)
                 if temp.find("'") != (temp.find('=') + 1):
@@ -201,7 +201,7 @@ class XMLParser:
                 if len(self.fileContent) != (self.fileContent.find(rootTag[1]) + len(rootTag[1])):
                     raise Exception('Invalid root element syntax.')
             
-            self.fileContent = self.outline_handler(self.fileContent) 
+            self.outline_handler() 
         else:   # XML file with a single empty root element
             self.rootElement = self.rootElement[:-1]
             self.rootElement = self.rootElement.rstrip(' ')
@@ -214,14 +214,14 @@ class XMLParser:
             return
         
     
-    def outline_handler(self, group):
+    def outline_handler(self):
         self.openTags = []
         self.closeTags = []
 
         # Global name check for file contents under root
         elementName = None
         closeTag = None
-        for i, c in enumerate(group):
+        for i, c in enumerate(self.fileContent):
             if elementName is None:
                 if '<' == c:
                     elementName = ''
@@ -240,7 +240,7 @@ class XMLParser:
                     elementName += c
 
             if closeTag is None:
-                if c == '<' and group[i+1] == '/':
+                if c == '<' and self.fileContent[i+1] == '/':
                     closeTag = ''
             else:
                 if '>' == c:
@@ -258,25 +258,29 @@ class XMLParser:
             self.get_name_list()
 
         # Format string
-        group = ''.join(group.split('\n'))
-        group = ''.join(group.split('  '))
-        temp = ' '
-        for c in group:
-            if ' ' == c:
-                if temp[-1] == '>':
-                    pass
-                else:
-                    temp += c
-            elif '<' == c:
-                if temp[-1] == ' ':
-                    temp = temp[:-1] + c
-                else:
-                    temp += c
-            else:
-                temp += c
+        temp = ''.join(self.fileContent.split('\n'))
+        temp = ''.join(temp.split('  '))
+        self.fileContent = ''
 
-        print(temp)
-        return group
+        tag = False
+        skip = False
+        for c in temp:
+            if not tag:
+                self.fileContent += c
+                tag = c == '<'
+            else:
+                if c == '>':
+                    tag = False
+                    skip = False
+                    self.fileContent += c
+                else:
+                    if not skip:
+                        skip = c == ' '
+                    if not skip:
+                        self.fileContent += c
+
+                
+        print(self.fileContent)
 
     
     def get_name_list(self):
