@@ -259,6 +259,8 @@ class XMLParser:
 
         if len(self.groupCloseTags) != len(self.groupOpenTags):
             raise Exception("Mismatched XML elements and closing tags.")
+        else:
+            self.get_name_list()
 
         # Format string
         group = ''.join(group.split('\n'))
@@ -290,16 +292,29 @@ class XMLParser:
 
         return group
 
+    
+    def get_name_list(self):
+        self.tagTree = []
+
+        for i, tag in enumerate(self.groupCloseTags):
+            if tag is not None:
+                temp = ''
+                index = i
+                while index >= 0:
+                    if self.groupOpenTags[index] is not None:
+                        removalCondition = temp == ''
+                        temp = '\\' + self.groupOpenTags[index] + temp
+                        if removalCondition:
+                            self.groupOpenTags[index] = None
+                    index -= 1
+                self.tagTree.append(temp)
+
 
 if __name__ == '__main__':
     file = 'test_file.xml'
     testSection = XMLParser(file=file)
 
-    openTags = testSection.groupOpenTags
-    closeTags = testSection.groupCloseTags
-
-    for i, _ in enumerate(openTags):
-        try:
-            print(f'{openTags[i]: >8} | {" "*8}')
-        except:
-            print(f'{" "*8} | {closeTags[i]}')
+    tagTree = testSection.tagTree
+    print("Tag tree:")
+    for tag in tagTree:
+        print(tag)

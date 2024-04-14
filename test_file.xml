@@ -1,5 +1,6 @@
 <test_file lang="en" another='unknown'>
     <content>
+        Some text.
         <entry>
             <field> F1 </field>
             <field some_attribute="nada">
