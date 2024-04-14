@@ -94,6 +94,12 @@ class XMLParser:
     def handle_attributes(self, tag):
         msg = f"Invalid self-describing syntax: {tag}"
 
+        if tag.find('/') != -1:
+            if tag.find('/') != len(tag) - 1:
+                raise Exception(msg)
+            else:
+                tag = tag[:-1]
+
         # Format element name
         tag = tag.split('=')
         for i, _ in enumerate(tag):

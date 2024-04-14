@@ -7,7 +7,7 @@
                 <entry> meh </entry>
                 <entry> meh? </entry>
             </field>
-            <field />
+            <field attribute="nothing"/>
         </entry>
     </content>
     <config>
