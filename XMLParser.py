@@ -200,12 +200,8 @@ class XMLParser:
             else:
                 if len(self.fileContent) != (self.fileContent.find(rootTag[1]) + len(rootTag[1])):
                     raise Exception('Invalid root element syntax.')
-                
-            index = [self.fileContent.find(rootTag[0]), self.fileContent.find(rootTag[1])]
-            index[0] += len(rootTag[0])
-
-            group = self.fileContent[index[0] : index[1]]
-            self.outputDict = {self.rootElement : self.parse_group(group)}   
+            
+            self.fileContent = self.outline_handler(self.fileContent) 
         else:   # XML file with a single empty root element
             self.rootElement = self.rootElement[:-1]
             self.rootElement = self.rootElement.rstrip(' ')
@@ -218,10 +214,9 @@ class XMLParser:
             return
         
     
-    def parse_group(self, group):
-        group = self.trim(contentOfInterest=group)
-        self.groupOpenTags = []
-        self.groupCloseTags = []
+    def outline_handler(self, group):
+        self.openTags = []
+        self.closeTags = []
 
         # Global name check for file contents under root
         elementName = None
@@ -236,8 +231,8 @@ class XMLParser:
                     if '/' == elementName[-1]:
                         elementName = elementName[:-1]
                         closeTag = elementName
-                    self.groupOpenTags.append(self.name_check(elementName))
-                    self.groupCloseTags.append(None)
+                    self.openTags.append(self.name_check(elementName))
+                    self.closeTags.append(None)
                     elementName = None
                 elif '' == elementName and '/' == c:
                     elementName = None
@@ -249,15 +244,15 @@ class XMLParser:
                     closeTag = ''
             else:
                 if '>' == c:
-                    self.groupCloseTags.append(self.name_check(closeTag))
-                    self.groupOpenTags.append(None)
+                    self.closeTags.append(self.name_check(closeTag))
+                    self.openTags.append(None)
                     closeTag = None
                 elif '/' == c:
                     pass
                 else:
                     closeTag += c
 
-        if len(self.groupCloseTags) != len(self.groupOpenTags):
+        if len(self.closeTags) != len(self.openTags):
             raise Exception("Mismatched XML elements and closing tags.")
         else:
             self.get_name_list()
@@ -280,34 +275,47 @@ class XMLParser:
             else:
                 temp += c
 
-        group = None
-        for c in temp:
-            if group is None:
-                group = c
-            else:
-                if '<' == c:
-                    group += '\n' + c
-                else:
-                    group += c
-
+        print(temp)
         return group
 
     
     def get_name_list(self):
-        self.tagTree = []
+        self.tagTree = {}
 
-        for i, tag in enumerate(self.groupCloseTags):
+        for i, tag in enumerate(self.closeTags):
             if tag is not None:
                 temp = ''
                 index = i
                 while index >= 0:
-                    if self.groupOpenTags[index] is not None:
+                    if self.openTags[index] is not None:
                         removalCondition = temp == ''
-                        temp = '\\' + self.groupOpenTags[index] + temp
+                        temp = '/' + self.openTags[index] + temp
                         if removalCondition:
-                            self.groupOpenTags[index] = None
+                            self.openTags[index] = None
                     index -= 1
-                self.tagTree.append(temp)
+                if temp not in self.tagTree:
+                    self.tagTree.update({temp:None})
+                else:
+                    if self.tagTree[temp] is None:
+                        self.tagTree[temp] = [None]
+                    self.tagTree[temp].append(None)
+
+        tagTree_temp = {list(self.tagTree.keys())[-1]: self.tree_sort(parent=list(self.tagTree.keys())[-1])}
+        print(tagTree_temp)
+
+
+    def tree_sort(self, parent):
+        output = []
+
+        child = parent.count('/') + 1
+        for branch in list(self.tagTree.keys()):
+            if branch.count('/') == child and parent in branch:
+                output.append({branch: self.tree_sort(parent=branch)})
+
+        return output
+
+        
+
 
 
 if __name__ == '__main__':
@@ -317,4 +325,4 @@ if __name__ == '__main__':
     tagTree = testSection.tagTree
     print("Tag tree:")
     for tag in tagTree:
-        print(tag)
+        print(f'{tag}: {tagTree[tag]}')
