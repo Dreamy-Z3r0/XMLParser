@@ -272,10 +272,19 @@ class XMLParser:
         skip = False
         for c in temp:
             if not tag:
-                self.fileContent += c
-                tag = c == '<'
+                try:
+                    if self.fileContent[-1] == '>' and c == ' ':
+                        pass
+                    elif self.fileContent[-1] == ' ' and c == '<':
+                        self.fileContent = self.fileContent[:-1] + c
+                    else:
+                        self.fileContent += c
+                except:
+                    pass
+                finally:
+                    tag = c == '<'
             else:
-                if c == '>':
+                if c == '>' or c == '/':
                     tag = False
                     skip = False
                     self.fileContent += c
