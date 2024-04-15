@@ -194,29 +194,32 @@ class XMLParser:
         if -1 in index:
             raise Exception('Invalid root element syntax.')
         
-        self.rootElement = self.fileContent[index[0] + 1 : index[1]]
-        rootTag = ['<' + self.rootElement + '>']
-        self.rootElement = self.handle_attributes(tag=self.rootElement)
-        if '/' != self.rootElement[-1]:
-            self.name_check(name=self.rootElement)
+        rootElement = self.fileContent[index[0] + 1 : index[1]]
+        rootTag = ['<' + rootElement + '>']
+        rootElement = self.handle_attributes(tag=rootElement)
+        if '/' != rootElement[-1]:
+            self.name_check(name=rootElement)
 
-            rootTag.append('</' + self.rootElement + '>')
+            rootTag.append('</' + rootElement + '>')
             if -1 in [self.fileContent.find(rootTag[0]), self.fileContent.find(rootTag[1])]:
                 raise Exception('Invalid root element syntax.')
             else:
                 if len(self.fileContent) != (self.fileContent.find(rootTag[1]) + len(rootTag[1])):
                     raise Exception('Invalid root element syntax.')
             
+            del rootElement
+            del rootTag
+            del index
             self.outline_handler() 
         else:   # XML file with a single empty root element
-            self.rootElement = self.rootElement[:-1]
-            self.rootElement = self.rootElement.rstrip(' ')
-            self.name_check(name=self.rootElement)
+            rootElement = rootElement[:-1]
+            rootElement = rootElement.rstrip(' ')
+            self.name_check(name=rootElement)
 
             if len(self.fileContent) - 1 > index[1]:
                 raise Exception("Expected a single root element.")
             
-            self.outputDict = {self.rootElement: ''}
+            self.outputDict = {rootElement: ''}
             return
         
     
@@ -331,33 +334,26 @@ class XMLParser:
                         self.tagTree[temp] = [None]
                     self.tagTree[temp].append(None)
 
+        del openTags
+
         outputDict = {list(self.tagTree.keys())[-1]: self.tree_sort(parent=list(self.tagTree.keys())[-1])}
-        self.tagTree = None
+        del self.tagTree
+
         self.outputDict = self.normalise_dict_keys(outputDict)
-
-        for i, _ in enumerate(self.openTags):
-            try:
-                print(f'{self.openTags[i]:>9} |')
-            except:
-                print(f'{" "*9} | {self.closeTags[i]}')
-
-        print(self.outputDict)
+        self.fetch_data()
 
 
     def tree_sort(self, parent):
         output = []
-
         child = parent.count('/') + 1
         for branch in list(self.tagTree.keys()):
             if branch.count('/') == child and parent in branch:
                 output.append({branch: self.tree_sort(parent=branch)})
-
         return output
 
         
     def normalise_dict_keys(self, dict):
         output = {}
-
         for key in dict:
             temp_key = key[key.rfind('/')+1:]
             if dict[key] == []:
@@ -367,19 +363,79 @@ class XMLParser:
                 for dictInList in dict[key]:
                     outputList.append(self.normalise_dict_keys(dict=dictInList))
                 output.update({temp_key: outputList})
-
         return output
 
 
     def fetch_data(self):
-        pass
+        for index, tagName in enumerate(self.closeTags):
+            if tagName is not None:
+                lookupPath = ''
+                i = index
+                while i >= 0:
+                    if self.openTags[i] is not None:
+                        lookupPath = '/' + self.openTags[i] + lookupPath
+                        if self.openTags[i] == tagName:
+                            self.openTags[i] = None
+                    i -= 1
+
+                startPos = 0
+                temp = lookupPath
+                while temp.rfind('/') > 0:
+                    tempTag = temp[1 : temp.find('/', 1)]
+                    temp = temp[temp.find('/', 1):]
+                    startPos = self.fileContent.find(tempTag, startPos)
+                del temp
+
+                tagPair = ['<'+tagName+'>', '</'+tagName+'>']
+                tagIndices = [self.fileContent.find(tagPair[0],startPos), self.fileContent.find(tagPair[1],startPos)]
+
+                tagContent = self.fileContent[tagIndices[0]+len(tagPair[0]) : tagIndices[1]]
+                tagTemp = tagPair[0] + tagContent + tagPair[1]
+                tagContent = tagContent.strip(' ')
+
+                self.fileContent = self.fileContent.replace(tagTemp, ' '*len(tagTemp), 1)
+
+                del tagPair
+                del tagIndices
+                self.outputDict = self.branch_access(branch=self.outputDict, path=lookupPath, content=tagContent)
+        
+        del self.fileContent
+        del self.openTags
+        del self.closeTags
+
+
+    def branch_access(self, branch, path, content):
+        import copy
+        temp = copy.deepcopy(branch)
+
+        if path.rfind('/') == 0:
+            path = path[1:]
+            if content == '':
+                if temp[path] == []:
+                    temp[path].append(content)
+                else:
+                    pass
+            else:
+                temp[path].append(content)
+        else:
+            rootTag = path[1:path.find('/', 1)]
+            path = path[path.find('/', 1):]
+
+            child = path[1:]
+            if child.find('/') > -1:
+                child = child[:child.find('/')]
+
+            for index, _ in enumerate(temp[rootTag]):
+                if child in temp[rootTag][index]:
+                    temp[rootTag][index] = self.branch_access(branch=temp[rootTag][index], path=path, content=content)
+                    break
+
+        return temp
 
 
 if __name__ == '__main__':
     file = 'test_file.xml'
     testSection = XMLParser(file=file)
 
-    # tagTree = testSection.tagTree
-    # print("Tag tree:")
-    # for tag in tagTree:
-    #     print(f'{tag}: {tagTree[tag]}')
+    outputDict = testSection.outputDict
+    print(outputDict)
