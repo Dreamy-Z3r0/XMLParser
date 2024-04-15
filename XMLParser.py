@@ -378,6 +378,13 @@ class XMLParser:
 
     # Fetch data of each branch and update the output dictionary accordingly
     def fetch_data(self):
+        # for i, tag in enumerate(self.openTags):
+        #     if tag is None:
+        #         print(f'{" "*10} | {self.closeTags[i]}')
+        #     else:
+        #         print(f'{self.openTags[i]:>10} | ')
+
+
         for index, tagName in enumerate(self.closeTags):
             if tagName is not None:
                 lookupPath = ''
@@ -404,6 +411,16 @@ class XMLParser:
                 tagTemp = tagPair[0] + tagContent + tagPair[1]
                 tagContent = tagContent.strip(' ')
 
+                if tagIndices[1] == tagIndices[0] + len(tagPair[0]):
+                    tagContent = "SOME MASSIVE TEXT"
+
+                print(f'''
+                tagPair: {tagPair}
+                tagIndices: {tagIndices}
+                tagContent = {tagContent}
+                ----------
+                ''')
+
                 self.fileContent = self.fileContent.replace(tagTemp, ' '*len(tagTemp), 1)
 
                 del tagPair
@@ -414,11 +431,15 @@ class XMLParser:
         del self.openTags
         del self.closeTags
 
+        self.output()
+
 
     # Update the data of a branch
     def branch_access(self, branch, path, content):
         import copy
         temp = copy.deepcopy(branch)
+
+        print(f'Current path: {path}')
 
         if path.rfind('/') == 0:
             path = path[1:]
@@ -443,6 +464,11 @@ class XMLParser:
                     break
 
         return temp
+
+
+    # Reface output dictionary
+    def output(self):
+        pass
 
 
 if __name__ == '__main__':
