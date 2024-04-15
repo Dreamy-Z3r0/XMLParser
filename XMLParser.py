@@ -227,7 +227,7 @@ class XMLParser:
         # Global name check for file contents under root
         elementName = None
         closeTag = None
-        print(self.fileContent)
+        self.format_preprocessing_content()
         for i, c in enumerate(self.fileContent):
             if elementName is None:
                 if '<' == c:
@@ -270,7 +270,8 @@ class XMLParser:
         else:
             self.get_name_list()
 
-        # Format string
+
+    def format_preprocessing_content(self):
         temp = ''.join(self.fileContent.split('\n'))
         temp = ''.join(temp.split('  '))
         self.fileContent = ''
@@ -301,11 +302,14 @@ class XMLParser:
                     if not skip:
                         self.fileContent += c
 
-        # while self.fileContent.find('/>') > -1:
-        #     tagIndices = [self.fileContent.rfind('<',0,self.fileContent.rfind('/>')), self.fileContent.rfind('/>')]
-        #     tag = self.fileContent[tagIndices[0]:tagIndices[1]+2]
-        #     replacement = self.fileContent[tagIndices[0]:tagIndices[1]] + '>'
-        #     self.fileContent = self.fileContent.replace(tag, replacement)
+        while self.fileContent.find('/>') > -1:
+            tagIndices = [self.fileContent.rfind('<',0,self.fileContent.rfind('/>')), self.fileContent.rfind('/>')]
+            tag = self.fileContent[tagIndices[0]:tagIndices[1]+2]
+
+            replacement = self.fileContent[tagIndices[0]:tagIndices[1]] + '>'
+            replacement += '</' + replacement[1:]
+            
+            self.fileContent = self.fileContent.replace(tag, replacement)
 
     
     def get_name_list(self):
@@ -315,7 +319,7 @@ class XMLParser:
             try:
                 print(f'{self.openTags[i]:>9} |')
             except:
-                print(f'{' '*9} | {self.closeTags[i]}')
+                print(f'{" "*9} | {self.closeTags[i]}')
 
         for i, tag in enumerate(self.closeTags):
             if tag is not None:
