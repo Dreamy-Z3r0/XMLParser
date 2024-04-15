@@ -259,12 +259,6 @@ class XMLParser:
                 else:
                     closeTag += c
 
-        # for i, _ in enumerate(self.openTags):
-        #     try:
-        #         print(f'{self.openTags[i]:>9} |')
-        #     except:
-        #         print(f'{' '*9} | {self.closeTags[i]}')
-
         if len(self.closeTags) != len(self.openTags):
             raise Exception("Mismatched XML elements and closing tags.")
         else:
@@ -315,22 +309,19 @@ class XMLParser:
     def get_name_list(self):
         self.tagTree = {}
 
-        for i, _ in enumerate(self.openTags):
-            try:
-                print(f'{self.openTags[i]:>9} |')
-            except:
-                print(f'{" "*9} | {self.closeTags[i]}')
+        import copy
+        openTags = copy.deepcopy(self.openTags)
 
         for i, tag in enumerate(self.closeTags):
             if tag is not None:
                 temp = ''
                 index = i
                 while index >= 0:
-                    if self.openTags[index] is not None:
+                    if openTags[index] is not None:
                         removalCondition = temp == ''
-                        temp = '/' + self.openTags[index] + temp
+                        temp = '/' + openTags[index] + temp
                         if removalCondition:
-                            self.openTags[index] = None
+                            openTags[index] = None
                     index -= 1
 
                 if temp not in self.tagTree:
@@ -340,11 +331,17 @@ class XMLParser:
                         self.tagTree[temp] = [None]
                     self.tagTree[temp].append(None)
 
-        for tag in self.tagTree:
-            print(f'{tag}: {self.tagTree[tag]}')
+        outputDict = {list(self.tagTree.keys())[-1]: self.tree_sort(parent=list(self.tagTree.keys())[-1])}
+        self.tagTree = None
+        self.outputDict = self.normalise_dict_keys(outputDict)
 
-        tagTree_temp = {list(self.tagTree.keys())[-1]: self.tree_sort(parent=list(self.tagTree.keys())[-1])}
-        
+        for i, _ in enumerate(self.openTags):
+            try:
+                print(f'{self.openTags[i]:>9} |')
+            except:
+                print(f'{" "*9} | {self.closeTags[i]}')
+
+        print(self.outputDict)
 
 
     def tree_sort(self, parent):
@@ -358,7 +355,24 @@ class XMLParser:
         return output
 
         
+    def normalise_dict_keys(self, dict):
+        output = {}
 
+        for key in dict:
+            temp_key = key[key.rfind('/')+1:]
+            if dict[key] == []:
+                output.update({temp_key: []})
+            else:
+                outputList = []
+                for dictInList in dict[key]:
+                    outputList.append(self.normalise_dict_keys(dict=dictInList))
+                output.update({temp_key: outputList})
+
+        return output
+
+
+    def fetch_data(self):
+        pass
 
 
 if __name__ == '__main__':
