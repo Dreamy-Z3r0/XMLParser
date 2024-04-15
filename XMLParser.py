@@ -15,6 +15,7 @@ class XMLParser:
         self.parse()
 
 
+    # Strip a content of trailing spaces and new line characters
     def trim(self, contentOfInterest=None):
         if contentOfInterest is None:
             contentOfInterest = self.fileContent
@@ -33,6 +34,7 @@ class XMLParser:
         return contentOfInterest
 
 
+    # Check an element name
     def name_check(self, name):
         msg = []
 
@@ -62,6 +64,7 @@ class XMLParser:
         return name
 
 
+    # Preprocess the input file
     def preprocess(self, file):
         # Check if input file is an XML file
         if '.xml' not in file.lower():
@@ -91,6 +94,7 @@ class XMLParser:
         self.fileContent = self.trim()
 
     
+    # Check for self-describing syntax if any
     def handle_attributes(self, tag):
         msg = f"Invalid self-describing syntax: {tag}"
 
@@ -145,6 +149,7 @@ class XMLParser:
         return tag
 
 
+    # Main parsing operations
     def parse(self):
         ### Prolog
 
@@ -223,6 +228,7 @@ class XMLParser:
             return
         
     
+    # Obtain the map of the XML file
     def outline_handler(self):
         self.openTags = []
         self.closeTags = []
@@ -268,6 +274,7 @@ class XMLParser:
             self.get_name_list()
 
 
+    # Format the XML contents for parsing
     def format_preprocessing_content(self):
         temp = ''.join(self.fileContent.split('\n'))
         temp = ''.join(temp.split('  '))
@@ -309,6 +316,7 @@ class XMLParser:
             self.fileContent = self.fileContent.replace(tag, replacement)
 
     
+    # Obtain list of elements
     def get_name_list(self):
         self.tagTree = {}
 
@@ -343,6 +351,7 @@ class XMLParser:
         self.fetch_data()
 
 
+    # Construct the dictionary layout
     def tree_sort(self, parent):
         output = []
         child = parent.count('/') + 1
@@ -352,6 +361,7 @@ class XMLParser:
         return output
 
         
+    # Reface key list
     def normalise_dict_keys(self, dict):
         output = {}
         for key in dict:
@@ -366,6 +376,7 @@ class XMLParser:
         return output
 
 
+    # Fetch data of each branch and update the output dictionary accordingly
     def fetch_data(self):
         for index, tagName in enumerate(self.closeTags):
             if tagName is not None:
@@ -404,6 +415,7 @@ class XMLParser:
         del self.closeTags
 
 
+    # Update the data of a branch
     def branch_access(self, branch, path, content):
         import copy
         temp = copy.deepcopy(branch)
